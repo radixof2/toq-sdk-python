@@ -4,6 +4,7 @@ import json
 import os
 from dataclasses import dataclass
 from typing import Any, AsyncIterator, Optional
+from urllib.parse import quote
 
 import httpx
 import httpx_sse
@@ -103,10 +104,10 @@ class Client:
         return self._request("GET", "/v1/peers").json()["peers"]
 
     def block(self, public_key: str) -> None:
-        self._request("POST", "/v1/peers/%s/block" % public_key)
+        self._request("POST", "/v1/peers/%s/block" % quote(public_key, safe=""))
 
     def unblock(self, public_key: str) -> None:
-        self._request("DELETE", "/v1/peers/%s/block" % public_key)
+        self._request("DELETE", "/v1/peers/%s/block" % quote(public_key, safe=""))
 
     # ── Approvals ────────────────────────────────────────
 
@@ -115,12 +116,12 @@ class Client:
 
     def approve(self, approval_id: str) -> None:
         self._request(
-            "POST", "/v1/approvals/%s" % approval_id, json={"decision": "approve"}
+            "POST", "/v1/approvals/%s" % quote(approval_id, safe=""), json={"decision": "approve"}
         )
 
     def deny(self, approval_id: str) -> None:
         self._request(
-            "POST", "/v1/approvals/%s" % approval_id, json={"decision": "deny"}
+            "POST", "/v1/approvals/%s" % quote(approval_id, safe=""), json={"decision": "deny"}
         )
 
     # ── Discovery ────────────────────────────────────────
@@ -309,10 +310,10 @@ class AsyncClient:
         return (await self._request("GET", "/v1/peers")).json()["peers"]
 
     async def block(self, public_key: str) -> None:
-        await self._request("POST", "/v1/peers/%s/block" % public_key)
+        await self._request("POST", "/v1/peers/%s/block" % quote(public_key, safe=""))
 
     async def unblock(self, public_key: str) -> None:
-        await self._request("DELETE", "/v1/peers/%s/block" % public_key)
+        await self._request("DELETE", "/v1/peers/%s/block" % quote(public_key, safe=""))
 
     # ── Approvals ────────────────────────────────────────
 
@@ -321,12 +322,12 @@ class AsyncClient:
 
     async def approve(self, approval_id: str) -> None:
         await self._request(
-            "POST", "/v1/approvals/%s" % approval_id, json={"decision": "approve"}
+            "POST", "/v1/approvals/%s" % quote(approval_id, safe=""), json={"decision": "approve"}
         )
 
     async def deny(self, approval_id: str) -> None:
         await self._request(
-            "POST", "/v1/approvals/%s" % approval_id, json={"decision": "deny"}
+            "POST", "/v1/approvals/%s" % quote(approval_id, safe=""), json={"decision": "deny"}
         )
 
     # ── Discovery ────────────────────────────────────────
