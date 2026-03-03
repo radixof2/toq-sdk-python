@@ -51,6 +51,9 @@ Both `Client` (sync) and `AsyncClient` (async) have the same methods.
 |--------|-------------|
 | `send(to, text)` | Send a message |
 | `messages()` | Stream incoming messages (async only) |
+| `cancel_message(id)` | Cancel a sent message |
+| `send_streaming(to, text)` | Streaming delivery |
+| `get_thread(thread_id)` | Get messages in a thread |
 | `peers()` | List known peers |
 | `block(key)` / `unblock(key)` | Block/unblock an agent |
 | `approvals()` | List pending approvals |
