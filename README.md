@@ -65,6 +65,7 @@ Both `Client` (sync) and `AsyncClient` (async) have the same methods.
 | `health()` | Health check |
 | `shutdown()` | Stop the daemon |
 | `logs()` / `clear_logs()` | Read/clear logs |
+| `logs(follow=True)` | Stream logs in real time (async only) |
 | `diagnostics()` | Run diagnostics |
 | `check_upgrade()` | Check for updates |
 | `rotate_keys()` | Rotate identity keys |
