@@ -2,18 +2,21 @@
 
 Thin client to the local toq daemon. The daemon handles all protocol
 complexity (crypto, TLS, handshake, connections). This SDK provides
-a clean async interface for agent code.
+sync and async interfaces for agent code.
 
-Usage:
+Sync usage:
     import toq
-
     client = toq.connect()
-    response = await client.send("toq://peer.com/agent", "hello")
+    client.send("toq://peer.com/agent", "hello")
 
+Async usage:
+    import toq
+    client = toq.connect_async()
+    await client.send("toq://peer.com/agent", "hello")
     async for msg in client.messages():
         await msg.reply("got it")
 """
 
-from toq._client import Client, Message, ToqError, connect
+from toq._client import AsyncClient, Client, Message, ToqError, connect, connect_async
 
-__all__ = ["Client", "Message", "ToqError", "connect"]
+__all__ = ["AsyncClient", "Client", "Message", "ToqError", "connect", "connect_async"]

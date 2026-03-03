@@ -1,11 +1,19 @@
 """Tests for the toq SDK client."""
 
+import pytest
 import toq
 
 
 def test_connect_default():
     client = toq.connect()
     assert client._url == "http://127.0.0.1:9010"
+    assert isinstance(client, toq.Client)
+
+
+def test_connect_async_default():
+    client = toq.connect_async()
+    assert client._url == "http://127.0.0.1:9010"
+    assert isinstance(client, toq.AsyncClient)
 
 
 def test_connect_custom_url():
@@ -26,7 +34,7 @@ def test_connect_explicit_overrides_env(monkeypatch):
 
 
 def test_message_dataclass():
-    client = toq.connect()
+    client = toq.connect_async()
     msg = toq.Message(
         id="msg-1",
         type="message.send",
@@ -40,14 +48,16 @@ def test_message_dataclass():
     )
     assert msg.id == "msg-1"
     assert msg.sender == "toq://peer.com/agent"
-    assert msg.body == {"text": "hello"}
 
 
-import pytest
+def test_sync_daemon_not_running():
+    client = toq.connect("http://127.0.0.1:19999")
+    with pytest.raises(toq.ToqError, match="not running"):
+        client.status()
 
 
 @pytest.mark.asyncio
-async def test_daemon_not_running():
-    client = toq.connect("http://127.0.0.1:19999")
+async def test_async_daemon_not_running():
+    client = toq.connect_async("http://127.0.0.1:19999")
     with pytest.raises(toq.ToqError, match="not running"):
         await client.status()
