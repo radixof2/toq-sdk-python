@@ -143,7 +143,9 @@ class Client:
     def shutdown(self, graceful: bool = True) -> None:
         self._request("POST", "/v1/daemon/shutdown", json={"graceful": graceful})
 
-    def logs(self) -> list:
+    def logs(self, follow: bool = False) -> list:
+        if follow:
+            raise ToqError("Use connect_async() for log streaming")
         return self._request("GET", "/v1/logs").json()["entries"]
 
     def clear_logs(self) -> None:
@@ -349,8 +351,19 @@ class AsyncClient:
     async def shutdown(self, graceful: bool = True) -> None:
         await self._request("POST", "/v1/daemon/shutdown", json={"graceful": graceful})
 
-    async def logs(self) -> list:
+    async def logs(self, follow: bool = False) -> Any:
+        """Get log entries. With follow=True, returns an async iterator of entries."""
+        if follow:
+            return self._follow_logs()
         return (await self._request("GET", "/v1/logs")).json()["entries"]
+
+    async def _follow_logs(self) -> AsyncIterator[dict]:
+        async with httpx_sse.aconnect_sse(
+            self._http, "GET", "/v1/logs", params={"follow": "true"}
+        ) as source:
+            async for event in source.aiter_sse():
+                if event.data:
+                    yield json.loads(event.data)
 
     async def clear_logs(self) -> None:
         await self._request("DELETE", "/v1/logs")
