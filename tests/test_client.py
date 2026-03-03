@@ -41,3 +41,13 @@ def test_message_dataclass():
     assert msg.id == "msg-1"
     assert msg.sender == "toq://peer.com/agent"
     assert msg.body == {"text": "hello"}
+
+
+import pytest
+
+
+@pytest.mark.asyncio
+async def test_daemon_not_running():
+    client = toq.connect("http://127.0.0.1:19999")
+    with pytest.raises(toq.ToqError, match="not running"):
+        await client.status()

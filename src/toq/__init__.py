@@ -14,6 +14,6 @@ Usage:
         await msg.reply("got it")
 """
 
-from toq._client import Client, Message, connect
+from toq._client import Client, Message, ToqError, connect
 
-__all__ = ["Client", "Message", "connect"]
+__all__ = ["Client", "Message", "ToqError", "connect"]

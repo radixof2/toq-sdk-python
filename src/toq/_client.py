@@ -10,6 +10,15 @@ import httpx_sse
 
 DEFAULT_URL = "http://127.0.0.1:9010"
 URL_ENV = "TOQ_API_URL"
+DAEMON_NOT_RUNNING = "toq daemon is not running. Run 'toq up' first."
+
+
+class ToqError(Exception):
+    """Raised when the SDK cannot communicate with the daemon."""
+
+
+def _check_connection_error(exc: httpx.ConnectError) -> None:
+    raise ToqError(DAEMON_NOT_RUNNING) from exc
 
 
 def connect(url: Optional[str] = None) -> "Client":
@@ -55,6 +64,14 @@ class Client:
     async def __aexit__(self, *args: object) -> None:
         await self.close()
 
+    async def _request(self, method: str, path: str, **kwargs: Any) -> httpx.Response:
+        try:
+            resp = await self._http.request(method, path, **kwargs)
+        except httpx.ConnectError as exc:
+            _check_connection_error(exc)
+        resp.raise_for_status()
+        return resp
+
     # ── Messages ─────────────────────────────────────────
 
     async def send(
@@ -73,12 +90,12 @@ class Client:
             body["thread_id"] = thread_id
         if reply_to:
             body["reply_to"] = reply_to
-        resp = await self._http.post(
+        resp = await self._request(
+            "POST",
             "/v1/messages",
             json=body,
             params={"wait": str(wait).lower(), "timeout": timeout},
         )
-        resp.raise_for_status()
         return resp.json()
 
     async def messages(self) -> AsyncIterator[Message]:
@@ -105,130 +122,108 @@ class Client:
     # ── Peers ────────────────────────────────────────────
 
     async def peers(self) -> list:
-        resp = await self._http.get("/v1/peers")
-        resp.raise_for_status()
+        resp = await self._request('GET', "/v1/peers")
         return resp.json()["peers"]
 
     async def block(self, public_key: str) -> None:
-        resp = await self._http.post("/v1/peers/%s/block" % public_key)
-        resp.raise_for_status()
+        resp = await self._request('POST', "/v1/peers/%s/block" % public_key)
 
     async def unblock(self, public_key: str) -> None:
-        resp = await self._http.delete("/v1/peers/%s/block" % public_key)
-        resp.raise_for_status()
+        resp = await self._request('DELETE', "/v1/peers/%s/block" % public_key)
 
     # ── Approvals ────────────────────────────────────────
 
     async def approvals(self) -> list:
-        resp = await self._http.get("/v1/approvals")
-        resp.raise_for_status()
+        resp = await self._request('GET', "/v1/approvals")
         return resp.json()["approvals"]
 
     async def approve(self, approval_id: str) -> None:
-        resp = await self._http.post(
+        resp = await self._request('POST', 
             "/v1/approvals/%s" % approval_id, json={"decision": "approve"}
         )
-        resp.raise_for_status()
 
     async def deny(self, approval_id: str) -> None:
-        resp = await self._http.post(
+        resp = await self._request('POST', 
             "/v1/approvals/%s" % approval_id, json={"decision": "deny"}
         )
-        resp.raise_for_status()
 
     # ── Discovery ────────────────────────────────────────
 
     async def discover(self, host: str) -> list:
-        resp = await self._http.get("/v1/discover", params={"host": host})
-        resp.raise_for_status()
+        resp = await self._request('GET', "/v1/discover", params={"host": host})
         return resp.json()["agents"]
 
     async def discover_local(self) -> list:
-        resp = await self._http.get("/v1/discover/local")
-        resp.raise_for_status()
+        resp = await self._request('GET', "/v1/discover/local")
         return resp.json()["agents"]
 
     # ── Daemon ───────────────────────────────────────────
 
     async def health(self) -> str:
-        resp = await self._http.get("/v1/health")
-        resp.raise_for_status()
+        resp = await self._request('GET', "/v1/health")
         return resp.text
 
     async def status(self) -> dict:
-        resp = await self._http.get("/v1/status")
-        resp.raise_for_status()
+        resp = await self._request('GET', "/v1/status")
         return resp.json()
 
     async def shutdown(self, graceful: bool = True) -> None:
-        resp = await self._http.post(
+        resp = await self._request('POST', 
             "/v1/daemon/shutdown", json={"graceful": graceful}
         )
-        resp.raise_for_status()
 
     async def logs(self) -> list:
-        resp = await self._http.get("/v1/logs")
-        resp.raise_for_status()
+        resp = await self._request('GET', "/v1/logs")
         return resp.json()["entries"]
 
     async def clear_logs(self) -> None:
-        resp = await self._http.delete("/v1/logs")
-        resp.raise_for_status()
+        resp = await self._request('DELETE', "/v1/logs")
 
     async def diagnostics(self) -> dict:
-        resp = await self._http.get("/v1/diagnostics")
-        resp.raise_for_status()
+        resp = await self._request('GET', "/v1/diagnostics")
         return resp.json()
 
     async def check_upgrade(self) -> dict:
-        resp = await self._http.get("/v1/upgrade/check")
-        resp.raise_for_status()
+        resp = await self._request('GET', "/v1/upgrade/check")
         return resp.json()
 
     # ── Connections ──────────────────────────────────────
 
     async def connections(self) -> list:
-        resp = await self._http.get("/v1/connections")
-        resp.raise_for_status()
+        resp = await self._request('GET', "/v1/connections")
         return resp.json()["connections"]
 
     # ── Keys ─────────────────────────────────────────────
 
     async def rotate_keys(self) -> dict:
-        resp = await self._http.post("/v1/keys/rotate")
-        resp.raise_for_status()
+        resp = await self._request('POST', "/v1/keys/rotate")
         return resp.json()
 
     # ── Backup ───────────────────────────────────────────
 
     async def export_backup(self, passphrase: str) -> str:
-        resp = await self._http.post(
+        resp = await self._request('POST', 
             "/v1/backup/export", json={"passphrase": passphrase}
         )
-        resp.raise_for_status()
         return resp.json()["data"]
 
     async def import_backup(self, passphrase: str, data: str) -> None:
-        resp = await self._http.post(
+        resp = await self._request('POST', 
             "/v1/backup/import", json={"passphrase": passphrase, "data": data}
         )
-        resp.raise_for_status()
 
     # ── Config ───────────────────────────────────────────
 
     async def config(self) -> dict:
-        resp = await self._http.get("/v1/config")
-        resp.raise_for_status()
+        resp = await self._request('GET', "/v1/config")
         return resp.json()["config"]
 
     async def update_config(self, **updates: Any) -> dict:
-        resp = await self._http.patch("/v1/config", json=updates)
-        resp.raise_for_status()
+        resp = await self._request('PATCH', "/v1/config", json=updates)
         return resp.json()["config"]
 
     # ── Agent Card ───────────────────────────────────────
 
     async def card(self) -> dict:
-        resp = await self._http.get("/v1/card")
-        resp.raise_for_status()
+        resp = await self._request('GET', "/v1/card")
         return resp.json()
