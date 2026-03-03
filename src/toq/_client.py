@@ -82,7 +82,16 @@ class Client:
         )
         return resp.json()
 
-    # ── Peers ────────────────────────────────────────────
+    def cancel_message(self, message_id: str) -> None:
+        """Cancel a sent message."""
+        self._request("POST", "/v1/messages/%s/cancel" % message_id)
+
+    def send_streaming(self, to: str, text: str, **kwargs: Any) -> dict:
+        """Send a message using streaming delivery."""
+        body: dict = {"to": to, "body": {"text": text}, **kwargs}
+        return self._request("POST", "/v1/messages/stream", json=body).json()
+
+    # ── Peers (sync) ───────────────────────────────────
 
     def peers(self) -> list:
         return self._request("GET", "/v1/peers").json()["peers"]
@@ -272,6 +281,15 @@ class AsyncClient:
                     timestamp=data["timestamp"],
                     _client=self,
                 )
+
+    async def cancel_message(self, message_id: str) -> None:
+        """Cancel a sent message."""
+        await self._request("POST", "/v1/messages/%s/cancel" % message_id)
+
+    async def send_streaming(self, to: str, text: str, **kwargs: Any) -> dict:
+        """Send a message using streaming delivery."""
+        body: dict = {"to": to, "body": {"text": text}, **kwargs}
+        return (await self._request("POST", "/v1/messages/stream", json=body)).json()
 
     # ── Peers ────────────────────────────────────────────
 
