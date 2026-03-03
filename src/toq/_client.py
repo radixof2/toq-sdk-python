@@ -91,6 +91,12 @@ class Client:
         body: dict = {"to": to, "body": {"text": text}, **kwargs}
         return self._request("POST", "/v1/messages/stream", json=body).json()
 
+    # ── Threads ──────────────────────────────────────────
+
+    def get_thread(self, thread_id: str) -> dict:
+        """Get messages in a thread."""
+        return self._request("GET", "/v1/threads/%s" % thread_id).json()
+
     # ── Peers (sync) ───────────────────────────────────
 
     def peers(self) -> list:
@@ -290,6 +296,12 @@ class AsyncClient:
         """Send a message using streaming delivery."""
         body: dict = {"to": to, "body": {"text": text}, **kwargs}
         return (await self._request("POST", "/v1/messages/stream", json=body)).json()
+
+    # ── Threads ──────────────────────────────────────────
+
+    async def get_thread(self, thread_id: str) -> dict:
+        """Get messages in a thread."""
+        return (await self._request("GET", "/v1/threads/%s" % thread_id)).json()
 
     # ── Peers ────────────────────────────────────────────
 
