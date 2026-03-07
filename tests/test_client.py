@@ -158,3 +158,49 @@ def test_sync_shutdown(monkeypatch):
     resp = MockResponse()
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     client.shutdown()  # should not raise
+
+
+def test_sync_send_close_thread(monkeypatch):
+    client = toq.connect("http://localhost:9010")
+    resp = MockResponse(json_data={"id": "m1", "status": "delivered", "thread_id": "t1", "timestamp": "now"})
+    monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
+    result = client.send("toq://host/agent", "goodbye", close_thread=True)
+    assert result["status"] == "delivered"
+
+
+def test_sync_send_multi_recipient(monkeypatch):
+    client = toq.connect("http://localhost:9010")
+    resp = MockResponse(json_data={
+        "results": [
+            {"to": "toq://host/a", "id": "m1", "thread_id": "t1", "status": "queued"},
+            {"to": "toq://host/b", "id": "m2", "thread_id": "t2", "status": "queued"},
+        ],
+        "timestamp": "now",
+    })
+    monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
+    result = client.send(["toq://host/a", "toq://host/b"], "hello both")
+    assert len(result["results"]) == 2
+
+
+def test_sync_stream_start(monkeypatch):
+    client = toq.connect("http://localhost:9010")
+    resp = MockResponse(json_data={"stream_id": "s1", "thread_id": "t1"})
+    monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
+    result = client.stream_start("toq://host/agent")
+    assert result["stream_id"] == "s1"
+
+
+def test_sync_stream_chunk(monkeypatch):
+    client = toq.connect("http://localhost:9010")
+    resp = MockResponse(json_data={"chunk_id": "c1"})
+    monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
+    result = client.stream_chunk("s1", "hello ")
+    assert result["chunk_id"] == "c1"
+
+
+def test_sync_stream_end(monkeypatch):
+    client = toq.connect("http://localhost:9010")
+    resp = MockResponse(json_data={"chunk_id": "e1"})
+    monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
+    result = client.stream_end("s1", close_thread=True)
+    assert result["chunk_id"] == "e1"
