@@ -3,7 +3,7 @@
 import json
 import os
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Optional
+from typing import Any, AsyncIterator, List, Optional, Union
 from urllib.parse import quote
 
 import httpx
@@ -61,7 +61,7 @@ class Client:
 
     def send(
         self,
-        to: "str | list[str]",
+        to: Union[str, List[str]],
         text: str,
         *,
         thread_id: Optional[str] = None,
@@ -262,7 +262,7 @@ class AsyncClient:
 
     async def send(
         self,
-        to: "str | list[str]",
+        to: Union[str, List[str]],
         text: str,
         *,
         thread_id: Optional[str] = None,
