@@ -61,20 +61,23 @@ class Client:
 
     def send(
         self,
-        to: str,
+        to: "str | list[str]",
         text: str,
         *,
         thread_id: Optional[str] = None,
         reply_to: Optional[str] = None,
+        close_thread: bool = False,
         wait: bool = True,
         timeout: int = 30,
     ) -> dict:
-        """Send a message to a remote agent."""
+        """Send a message to one or more remote agents."""
         body: dict = {"to": to, "body": {"text": text}}
         if thread_id:
             body["thread_id"] = thread_id
         if reply_to:
             body["reply_to"] = reply_to
+        if close_thread:
+            body["close_thread"] = True
         resp = self._request(
             "POST",
             "/v1/messages",
@@ -83,14 +86,25 @@ class Client:
         )
         return resp.json()
 
-    def cancel_message(self, message_id: str) -> None:
-        """Cancel a sent message."""
-        self._request("POST", "/v1/messages/%s/cancel" % message_id)
+    def stream_start(self, to: str, *, thread_id: Optional[str] = None) -> dict:
+        """Open a streaming connection to a remote agent."""
+        body: dict = {"to": to}
+        if thread_id:
+            body["thread_id"] = thread_id
+        return self._request("POST", "/v1/stream/start", json=body).json()
 
-    def send_streaming(self, to: str, text: str, **kwargs: Any) -> dict:
-        """Send a message using streaming delivery."""
-        body: dict = {"to": to, "body": {"text": text}, **kwargs}
-        return self._request("POST", "/v1/messages/stream", json=body).json()
+    def stream_chunk(self, stream_id: str, text: str) -> dict:
+        """Send a text chunk on an open stream."""
+        return self._request(
+            "POST", "/v1/stream/chunk", json={"stream_id": stream_id, "text": text}
+        ).json()
+
+    def stream_end(self, stream_id: str, *, close_thread: bool = False) -> dict:
+        """End a stream, optionally closing the thread."""
+        body: dict = {"stream_id": stream_id}
+        if close_thread:
+            body["close_thread"] = True
+        return self._request("POST", "/v1/stream/end", json=body).json()
 
     # ── Threads ──────────────────────────────────────────
 
@@ -248,20 +262,23 @@ class AsyncClient:
 
     async def send(
         self,
-        to: str,
+        to: "str | list[str]",
         text: str,
         *,
         thread_id: Optional[str] = None,
         reply_to: Optional[str] = None,
+        close_thread: bool = False,
         wait: bool = True,
         timeout: int = 30,
     ) -> dict:
-        """Send a message to a remote agent."""
+        """Send a message to one or more remote agents."""
         body: dict = {"to": to, "body": {"text": text}}
         if thread_id:
             body["thread_id"] = thread_id
         if reply_to:
             body["reply_to"] = reply_to
+        if close_thread:
+            body["close_thread"] = True
         resp = await self._request(
             "POST",
             "/v1/messages",
@@ -291,14 +308,25 @@ class AsyncClient:
                     _client=self,
                 )
 
-    async def cancel_message(self, message_id: str) -> None:
-        """Cancel a sent message."""
-        await self._request("POST", "/v1/messages/%s/cancel" % message_id)
+    async def stream_start(self, to: str, *, thread_id: Optional[str] = None) -> dict:
+        """Open a streaming connection to a remote agent."""
+        body: dict = {"to": to}
+        if thread_id:
+            body["thread_id"] = thread_id
+        return (await self._request("POST", "/v1/stream/start", json=body)).json()
 
-    async def send_streaming(self, to: str, text: str, **kwargs: Any) -> dict:
-        """Send a message using streaming delivery."""
-        body: dict = {"to": to, "body": {"text": text}, **kwargs}
-        return (await self._request("POST", "/v1/messages/stream", json=body)).json()
+    async def stream_chunk(self, stream_id: str, text: str) -> dict:
+        """Send a text chunk on an open stream."""
+        return (await self._request(
+            "POST", "/v1/stream/chunk", json={"stream_id": stream_id, "text": text}
+        )).json()
+
+    async def stream_end(self, stream_id: str, *, close_thread: bool = False) -> dict:
+        """End a stream, optionally closing the thread."""
+        body: dict = {"stream_id": stream_id}
+        if close_thread:
+            body["close_thread"] = True
+        return (await self._request("POST", "/v1/stream/end", json=body)).json()
 
     # ── Threads ──────────────────────────────────────────
 
