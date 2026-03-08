@@ -204,3 +204,35 @@ def test_sync_stream_end(monkeypatch):
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     result = client.stream_end("s1", close_thread=True)
     assert result["chunk_id"] == "e1"
+
+
+def test_sync_revoke(monkeypatch):
+    client = toq.connect("http://localhost:9010")
+    resp = MockResponse(json_data={})
+    called = {}
+    def capture(*a, **kw):
+        called["method"] = a[0] if a else kw.get("method")
+        called["url"] = str(a[1]) if len(a) > 1 else str(kw.get("url"))
+        return resp
+    monkeypatch.setattr(client._http, "request", capture)
+    client.revoke("ed25519:abc+/123=")
+    assert called["method"] == "POST"
+    assert "/revoke" in called["url"]
+    assert "%2B" in called["url"] or "%2F" in called["url"]
+
+
+def test_sync_history(monkeypatch):
+    client = toq.connect("http://localhost:9010")
+    resp = MockResponse(json_data={"messages": [{"id": "1", "from": "alice", "body": {"text": "hi"}}]})
+    monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
+    result = client.history(limit=10, from_addr="alice")
+    assert len(result) == 1
+    assert result[0]["from"] == "alice"
+
+
+def test_sync_history_defaults(monkeypatch):
+    client = toq.connect("http://localhost:9010")
+    resp = MockResponse(json_data={"messages": []})
+    monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
+    result = client.history()
+    assert result == []

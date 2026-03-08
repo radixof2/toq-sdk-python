@@ -138,6 +138,26 @@ class Client:
             "POST", "/v1/approvals/%s" % quote(approval_id, safe=""), json={"decision": "deny"}
         )
 
+    def revoke(self, approval_id: str) -> None:
+        self._request(
+            "POST", "/v1/approvals/%s/revoke" % quote(approval_id, safe="")
+        )
+
+    # ── History ──────────────────────────────────────────
+
+    def history(
+        self,
+        limit: int = 50,
+        from_addr: Optional[str] = None,
+        since: Optional[str] = None,
+    ) -> list:
+        params: dict = {"limit": limit}
+        if from_addr:
+            params["from"] = from_addr
+        if since:
+            params["since"] = since
+        return self._request("GET", "/v1/messages/history", params=params).json()["messages"]
+
     # ── Discovery ────────────────────────────────────────
 
     def discover(self, host: str) -> list:
@@ -359,6 +379,26 @@ class AsyncClient:
         await self._request(
             "POST", "/v1/approvals/%s" % quote(approval_id, safe=""), json={"decision": "deny"}
         )
+
+    async def revoke(self, approval_id: str) -> None:
+        await self._request(
+            "POST", "/v1/approvals/%s/revoke" % quote(approval_id, safe="")
+        )
+
+    # ── History ──────────────────────────────────────────
+
+    async def history(
+        self,
+        limit: int = 50,
+        from_addr: Optional[str] = None,
+        since: Optional[str] = None,
+    ) -> list:
+        params: dict = {"limit": limit}
+        if from_addr:
+            params["from"] = from_addr
+        if since:
+            params["since"] = since
+        return (await self._request("GET", "/v1/messages/history", params=params)).json()["messages"]
 
     # ── Discovery ────────────────────────────────────────
 
