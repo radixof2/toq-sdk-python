@@ -236,3 +236,50 @@ def test_sync_history_defaults(monkeypatch):
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     result = client.history()
     assert result == []
+
+
+def test_sync_block_by_address(monkeypatch):
+    client = toq.connect("http://localhost:9010")
+    called = {}
+    def capture(*a, **kw):
+        called["method"] = a[0]
+        called["url"] = a[1]
+        called["json"] = kw.get("json")
+        return MockResponse()
+    monkeypatch.setattr(client._http, "request", capture)
+    client.block(from_addr="toq://host/*")
+    assert called["method"] == "POST"
+    assert called["url"].endswith("/v1/block")
+    assert called["json"] == {"from": "toq://host/*"}
+
+
+def test_sync_approve_by_key(monkeypatch):
+    client = toq.connect("http://localhost:9010")
+    called = {}
+    def capture(*a, **kw):
+        called["method"] = a[0]
+        called["url"] = a[1]
+        called["json"] = kw.get("json")
+        return MockResponse()
+    monkeypatch.setattr(client._http, "request", capture)
+    client.approve(key="ed25519:abc")
+    assert called["url"].endswith("/v1/approve")
+    assert called["json"] == {"key": "ed25519:abc"}
+
+
+def test_sync_permissions(monkeypatch):
+    client = toq.connect("http://localhost:9010")
+    resp = MockResponse(json_data={"approved": [], "blocked": []})
+    monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
+    result = client.permissions()
+    assert "approved" in result
+    assert "blocked" in result
+
+
+def test_sync_ping(monkeypatch):
+    client = toq.connect("http://localhost:9010")
+    resp = MockResponse(json_data={"agent_name": "bob", "address": "toq://h/bob", "public_key": "k", "reachable": True})
+    monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
+    result = client.ping("toq://h/bob")
+    assert result["agent_name"] == "bob"
+    assert result["reachable"] is True
