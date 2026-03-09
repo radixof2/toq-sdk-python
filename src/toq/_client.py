@@ -117,30 +117,55 @@ class Client:
     def peers(self) -> list:
         return self._request("GET", "/v1/peers").json()["peers"]
 
-    def block(self, public_key: str) -> None:
-        self._request("POST", "/v1/peers/%s/block" % quote(public_key, safe=""))
+    def block(self, public_key: str = "", *, key: str = "", from_addr: str = "") -> None:
+        if from_addr:
+            self._request("POST", "/v1/block", json={"from": from_addr})
+        elif key or public_key:
+            self._request("POST", "/v1/block", json={"key": key or public_key})
 
-    def unblock(self, public_key: str) -> None:
-        self._request("DELETE", "/v1/peers/%s/block" % quote(public_key, safe=""))
+    def unblock(self, public_key: str = "", *, key: str = "", from_addr: str = "") -> None:
+        if from_addr:
+            self._request("DELETE", "/v1/block", json={"from": from_addr})
+        elif key or public_key:
+            self._request("DELETE", "/v1/block", json={"key": key or public_key})
 
     # ── Approvals ────────────────────────────────────────
 
     def approvals(self) -> list:
         return self._request("GET", "/v1/approvals").json()["approvals"]
 
-    def approve(self, approval_id: str) -> None:
-        self._request(
-            "POST", "/v1/approvals/%s" % quote(approval_id, safe=""), json={"decision": "approve"}
-        )
+    def approve(self, approval_id: str = "", *, key: str = "", from_addr: str = "") -> None:
+        if from_addr:
+            self._request("POST", "/v1/approve", json={"from": from_addr})
+        elif key:
+            self._request("POST", "/v1/approve", json={"key": key})
+        elif approval_id:
+            self._request(
+                "POST", "/v1/approvals/%s" % quote(approval_id, safe=""), json={"decision": "approve"}
+            )
 
     def deny(self, approval_id: str) -> None:
         self._request(
             "POST", "/v1/approvals/%s" % quote(approval_id, safe=""), json={"decision": "deny"}
         )
 
-    def revoke(self, approval_id: str) -> None:
-        self._request(
-            "POST", "/v1/approvals/%s/revoke" % quote(approval_id, safe="")
+    def revoke(self, approval_id: str = "", *, key: str = "", from_addr: str = "") -> None:
+        if from_addr:
+            self._request("POST", "/v1/revoke", json={"from": from_addr})
+        elif key:
+            self._request("POST", "/v1/revoke", json={"key": key})
+        elif approval_id:
+            self._request(
+                "POST", "/v1/approvals/%s/revoke" % quote(approval_id, safe="")
+            )
+
+    # ── Permissions ──────────────────────────────────────
+
+    def permissions(self) -> dict:
+        return self._request("GET", "/v1/permissions").json()
+
+    def ping(self, address: str) -> dict:
+        return self._request("POST", "/v1/ping", json={"address": address}).json()
         )
 
     # ── History ──────────────────────────────────────────
@@ -359,31 +384,55 @@ class AsyncClient:
     async def peers(self) -> list:
         return (await self._request("GET", "/v1/peers")).json()["peers"]
 
-    async def block(self, public_key: str) -> None:
-        await self._request("POST", "/v1/peers/%s/block" % quote(public_key, safe=""))
+    async def block(self, public_key: str = "", *, key: str = "", from_addr: str = "") -> None:
+        if from_addr:
+            await self._request("POST", "/v1/block", json={"from": from_addr})
+        elif key or public_key:
+            await self._request("POST", "/v1/block", json={"key": key or public_key})
 
-    async def unblock(self, public_key: str) -> None:
-        await self._request("DELETE", "/v1/peers/%s/block" % quote(public_key, safe=""))
+    async def unblock(self, public_key: str = "", *, key: str = "", from_addr: str = "") -> None:
+        if from_addr:
+            await self._request("DELETE", "/v1/block", json={"from": from_addr})
+        elif key or public_key:
+            await self._request("DELETE", "/v1/block", json={"key": key or public_key})
 
     # ── Approvals ────────────────────────────────────────
 
     async def approvals(self) -> list:
         return (await self._request("GET", "/v1/approvals")).json()["approvals"]
 
-    async def approve(self, approval_id: str) -> None:
-        await self._request(
-            "POST", "/v1/approvals/%s" % quote(approval_id, safe=""), json={"decision": "approve"}
-        )
+    async def approve(self, approval_id: str = "", *, key: str = "", from_addr: str = "") -> None:
+        if from_addr:
+            await self._request("POST", "/v1/approve", json={"from": from_addr})
+        elif key:
+            await self._request("POST", "/v1/approve", json={"key": key})
+        elif approval_id:
+            await self._request(
+                "POST", "/v1/approvals/%s" % quote(approval_id, safe=""), json={"decision": "approve"}
+            )
 
     async def deny(self, approval_id: str) -> None:
         await self._request(
             "POST", "/v1/approvals/%s" % quote(approval_id, safe=""), json={"decision": "deny"}
         )
 
-    async def revoke(self, approval_id: str) -> None:
-        await self._request(
-            "POST", "/v1/approvals/%s/revoke" % quote(approval_id, safe="")
-        )
+    async def revoke(self, approval_id: str = "", *, key: str = "", from_addr: str = "") -> None:
+        if from_addr:
+            await self._request("POST", "/v1/revoke", json={"from": from_addr})
+        elif key:
+            await self._request("POST", "/v1/revoke", json={"key": key})
+        elif approval_id:
+            await self._request(
+                "POST", "/v1/approvals/%s/revoke" % quote(approval_id, safe="")
+            )
+
+    # ── Permissions ──────────────────────────────────────
+
+    async def permissions(self) -> dict:
+        return (await self._request("GET", "/v1/permissions")).json()
+
+    async def ping(self, address: str) -> dict:
+        return (await self._request("POST", "/v1/ping", json={"address": address})).json()
 
     # ── History ──────────────────────────────────────────
 
