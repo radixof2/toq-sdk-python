@@ -166,7 +166,6 @@ class Client:
 
     def ping(self, address: str) -> dict:
         return self._request("POST", "/v1/ping", json={"address": address}).json()
-        )
 
     # ── History ──────────────────────────────────────────
 
