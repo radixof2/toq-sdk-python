@@ -250,6 +250,41 @@ class Client:
     def card(self) -> dict:
         return self._request("GET", "/v1/card").json()
 
+    # ── Handlers ─────────────────────────────────────────
+
+    def handlers(self) -> list:
+        return self._request("GET", "/v1/handlers").json()["handlers"]
+
+    def add_handler(
+        self,
+        name: str,
+        command: str,
+        *,
+        filter_from: Optional[List[str]] = None,
+        filter_key: Optional[List[str]] = None,
+        filter_type: Optional[List[str]] = None,
+    ) -> dict:
+        body: dict = {"name": name, "command": command}
+        if filter_from:
+            body["filter_from"] = filter_from
+        if filter_key:
+            body["filter_key"] = filter_key
+        if filter_type:
+            body["filter_type"] = filter_type
+        return self._request("POST", "/v1/handlers", json=body).json()
+
+    def remove_handler(self, name: str) -> dict:
+        return self._request("DELETE", "/v1/handlers/%s" % quote(name, safe="")).json()
+
+    def update_handler(self, name: str, **updates: Any) -> dict:
+        return self._request("PUT", "/v1/handlers/%s" % quote(name, safe=""), json=updates).json()
+
+    def stop_handler(self, name: str, *, pid: Optional[int] = None) -> dict:
+        body: dict = {"name": name}
+        if pid is not None:
+            body["pid"] = pid
+        return self._request("POST", "/v1/handlers/stop", json=body).json()
+
 
 # ── Message ──────────────────────────────────────────────
 
@@ -331,10 +366,15 @@ class AsyncClient:
         )
         return resp.json()
 
-    async def messages(self) -> AsyncIterator[Message]:
-        """Stream incoming messages via SSE (async only)."""
+    async def messages(self, *, from_addr: Optional[str] = None, msg_type: Optional[str] = None) -> AsyncIterator[Message]:
+        """Stream incoming messages via SSE (async only). Optional filters."""
+        params: dict = {}
+        if from_addr:
+            params["from"] = from_addr
+        if msg_type:
+            params["type"] = msg_type
         async with httpx_sse.aconnect_sse(
-            self._http, "GET", "/v1/messages"
+            self._http, "GET", "/v1/messages", params=params if params else None
         ) as source:
             async for event in source.aiter_sse():
                 if not event.data:
@@ -524,3 +564,38 @@ class AsyncClient:
 
     async def card(self) -> dict:
         return (await self._request("GET", "/v1/card")).json()
+
+    # ── Handlers ─────────────────────────────────────────
+
+    async def handlers(self) -> list:
+        return (await self._request("GET", "/v1/handlers")).json()["handlers"]
+
+    async def add_handler(
+        self,
+        name: str,
+        command: str,
+        *,
+        filter_from: Optional[List[str]] = None,
+        filter_key: Optional[List[str]] = None,
+        filter_type: Optional[List[str]] = None,
+    ) -> dict:
+        body: dict = {"name": name, "command": command}
+        if filter_from:
+            body["filter_from"] = filter_from
+        if filter_key:
+            body["filter_key"] = filter_key
+        if filter_type:
+            body["filter_type"] = filter_type
+        return (await self._request("POST", "/v1/handlers", json=body)).json()
+
+    async def remove_handler(self, name: str) -> dict:
+        return (await self._request("DELETE", "/v1/handlers/%s" % quote(name, safe=""))).json()
+
+    async def update_handler(self, name: str, **updates: Any) -> dict:
+        return (await self._request("PUT", "/v1/handlers/%s" % quote(name, safe=""), json=updates)).json()
+
+    async def stop_handler(self, name: str, *, pid: Optional[int] = None) -> dict:
+        body: dict = {"name": name}
+        if pid is not None:
+            body["pid"] = pid
+        return (await self._request("POST", "/v1/handlers/stop", json=body)).json()

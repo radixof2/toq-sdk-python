@@ -283,3 +283,66 @@ def test_sync_ping(monkeypatch):
     result = client.ping("toq://h/bob")
     assert result["agent_name"] == "bob"
     assert result["reachable"] is True
+
+
+def test_sync_handlers(monkeypatch):
+    client = toq.connect("http://localhost:9010")
+    resp = MockResponse(json_data={"handlers": [{"name": "h1", "command": "echo", "enabled": True, "active": 0}]})
+    monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
+    result = client.handlers()
+    assert len(result) == 1
+    assert result[0]["name"] == "h1"
+
+
+def test_sync_add_handler(monkeypatch):
+    client = toq.connect("http://localhost:9010")
+    called = {}
+    def capture(*a, **kw):
+        called["json"] = kw.get("json")
+        return MockResponse(json_data={"status": "added", "name": "test"})
+    monkeypatch.setattr(client._http, "request", capture)
+    result = client.add_handler("test", "echo hi", filter_from=["toq://host/*"])
+    assert result["status"] == "added"
+    assert called["json"]["name"] == "test"
+    assert called["json"]["filter_from"] == ["toq://host/*"]
+
+
+def test_sync_remove_handler(monkeypatch):
+    client = toq.connect("http://localhost:9010")
+    resp = MockResponse(json_data={"status": "removed", "name": "test"})
+    monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
+    result = client.remove_handler("test")
+    assert result["status"] == "removed"
+
+
+def test_sync_update_handler(monkeypatch):
+    client = toq.connect("http://localhost:9010")
+    resp = MockResponse(json_data={"status": "updated", "name": "test"})
+    monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
+    result = client.update_handler("test", enabled=False)
+    assert result["status"] == "updated"
+
+
+def test_sync_stop_handler(monkeypatch):
+    client = toq.connect("http://localhost:9010")
+    called = {}
+    def capture(*a, **kw):
+        called["json"] = kw.get("json")
+        return MockResponse(json_data={"stopped": 2, "name": "test"})
+    monkeypatch.setattr(client._http, "request", capture)
+    result = client.stop_handler("test")
+    assert result["stopped"] == 2
+    assert called["json"]["name"] == "test"
+    assert "pid" not in called["json"]
+
+
+def test_sync_stop_handler_with_pid(monkeypatch):
+    client = toq.connect("http://localhost:9010")
+    called = {}
+    def capture(*a, **kw):
+        called["json"] = kw.get("json")
+        return MockResponse(json_data={"stopped": 1, "name": "test"})
+    monkeypatch.setattr(client._http, "request", capture)
+    result = client.stop_handler("test", pid=12345)
+    assert result["stopped"] == 1
+    assert called["json"]["pid"] == 12345
