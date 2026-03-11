@@ -33,6 +33,26 @@ def test_connect_explicit_overrides_env(monkeypatch):
     assert client._url == "http://explicit:5678"
 
 
+def test_connect_workspace_state(monkeypatch, tmp_path):
+    monkeypatch.delenv("TOQ_API_URL", raising=False)
+    monkeypatch.chdir(tmp_path)
+    toq_dir = tmp_path / ".toq"
+    toq_dir.mkdir()
+    (toq_dir / "state.json").write_text('{"api_port": 9042}')
+    client = toq.connect()
+    assert client._url == "http://127.0.0.1:9042"
+
+
+def test_connect_env_overrides_workspace(monkeypatch, tmp_path):
+    monkeypatch.setenv("TOQ_API_URL", "http://from-env:1234")
+    monkeypatch.chdir(tmp_path)
+    toq_dir = tmp_path / ".toq"
+    toq_dir.mkdir()
+    (toq_dir / "state.json").write_text('{"api_port": 9042}')
+    client = toq.connect()
+    assert client._url == "http://from-env:1234"
+
+
 def test_message_dataclass():
     client = toq.connect_async()
     msg = toq.Message(
