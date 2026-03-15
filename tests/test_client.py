@@ -6,13 +6,13 @@ import toq
 
 def test_connect_default():
     client = toq.connect()
-    assert client._url == "http://127.0.0.1:9010"
+    assert client._url == "http://127.0.0.1:9009"
     assert isinstance(client, toq.Client)
 
 
 def test_connect_async_default():
     client = toq.connect_async()
-    assert client._url == "http://127.0.0.1:9010"
+    assert client._url == "http://127.0.0.1:9009"
     assert isinstance(client, toq.AsyncClient)
 
 
@@ -38,7 +38,7 @@ def test_connect_workspace_state(monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
     toq_dir = tmp_path / ".toq"
     toq_dir.mkdir()
-    (toq_dir / "state.json").write_text('{"api_port": 9042}')
+    (toq_dir / "state.json").write_text('{"port": 9042}')
     client = toq.connect()
     assert client._url == "http://127.0.0.1:9042"
 
@@ -48,7 +48,7 @@ def test_connect_env_overrides_workspace(monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
     toq_dir = tmp_path / ".toq"
     toq_dir.mkdir()
-    (toq_dir / "state.json").write_text('{"api_port": 9042}')
+    (toq_dir / "state.json").write_text('{"port": 9042}')
     client = toq.connect()
     assert client._url == "http://from-env:1234"
 
@@ -105,7 +105,7 @@ class MockResponse:
 
 
 def test_sync_send(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse(json_data={"id": "m1", "status": "delivered", "thread_id": "t1", "timestamp": "now"})
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     result = client.send("toq://host/agent", "hello")
@@ -113,7 +113,7 @@ def test_sync_send(monkeypatch):
 
 
 def test_sync_peers(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse(json_data={"peers": [{"public_key": "k1", "address": "a1", "status": "connected", "last_seen": "now"}]})
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     result = client.peers()
@@ -122,21 +122,21 @@ def test_sync_peers(monkeypatch):
 
 
 def test_sync_block(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse()
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     client.block("ed25519:abc")  # should not raise
 
 
 def test_sync_unblock(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse()
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     client.unblock("ed25519:abc")  # should not raise
 
 
 def test_sync_approvals(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse(json_data={"approvals": [{"id": "k1", "public_key": "k1", "address": "a1", "requested_at": "now"}]})
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     result = client.approvals()
@@ -144,21 +144,21 @@ def test_sync_approvals(monkeypatch):
 
 
 def test_sync_approve(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse()
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     client.approve("k1")  # should not raise
 
 
 def test_sync_deny(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse()
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     client.deny("k1")  # should not raise
 
 
 def test_sync_health(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse(text_data="ok")
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     result = client.health()
@@ -166,7 +166,7 @@ def test_sync_health(monkeypatch):
 
 
 def test_sync_status(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse(json_data={"status": "running", "address": "toq://localhost/agent"})
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     result = client.status()
@@ -174,14 +174,14 @@ def test_sync_status(monkeypatch):
 
 
 def test_sync_shutdown(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse()
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     client.shutdown()  # should not raise
 
 
 def test_sync_send_close_thread(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse(json_data={"id": "m1", "status": "delivered", "thread_id": "t1", "timestamp": "now"})
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     result = client.send("toq://host/agent", "goodbye", close_thread=True)
@@ -189,7 +189,7 @@ def test_sync_send_close_thread(monkeypatch):
 
 
 def test_sync_send_multi_recipient(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse(json_data={
         "results": [
             {"to": "toq://host/a", "id": "m1", "thread_id": "t1", "status": "queued"},
@@ -203,7 +203,7 @@ def test_sync_send_multi_recipient(monkeypatch):
 
 
 def test_sync_stream_start(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse(json_data={"stream_id": "s1", "thread_id": "t1"})
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     result = client.stream_start("toq://host/agent")
@@ -211,7 +211,7 @@ def test_sync_stream_start(monkeypatch):
 
 
 def test_sync_stream_chunk(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse(json_data={"chunk_id": "c1"})
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     result = client.stream_chunk("s1", "hello ")
@@ -219,7 +219,7 @@ def test_sync_stream_chunk(monkeypatch):
 
 
 def test_sync_stream_end(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse(json_data={"chunk_id": "e1"})
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     result = client.stream_end("s1", close_thread=True)
@@ -227,7 +227,7 @@ def test_sync_stream_end(monkeypatch):
 
 
 def test_sync_revoke(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse(json_data={})
     called = {}
     def capture(*a, **kw):
@@ -242,7 +242,7 @@ def test_sync_revoke(monkeypatch):
 
 
 def test_sync_history(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse(json_data={"messages": [{"id": "1", "from": "alice", "body": {"text": "hi"}}]})
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     result = client.history(limit=10, from_addr="alice")
@@ -251,7 +251,7 @@ def test_sync_history(monkeypatch):
 
 
 def test_sync_history_defaults(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse(json_data={"messages": []})
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     result = client.history()
@@ -259,7 +259,7 @@ def test_sync_history_defaults(monkeypatch):
 
 
 def test_sync_block_by_address(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     called = {}
     def capture(*a, **kw):
         called["method"] = a[0]
@@ -274,7 +274,7 @@ def test_sync_block_by_address(monkeypatch):
 
 
 def test_sync_approve_by_key(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     called = {}
     def capture(*a, **kw):
         called["method"] = a[0]
@@ -288,7 +288,7 @@ def test_sync_approve_by_key(monkeypatch):
 
 
 def test_sync_permissions(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse(json_data={"approved": [], "blocked": []})
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     result = client.permissions()
@@ -297,7 +297,7 @@ def test_sync_permissions(monkeypatch):
 
 
 def test_sync_ping(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse(json_data={"agent_name": "bob", "address": "toq://h/bob", "public_key": "k", "reachable": True})
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     result = client.ping("toq://h/bob")
@@ -306,7 +306,7 @@ def test_sync_ping(monkeypatch):
 
 
 def test_sync_handlers(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse(json_data={"handlers": [{"name": "h1", "command": "echo", "enabled": True, "active": 0}]})
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     result = client.handlers()
@@ -315,7 +315,7 @@ def test_sync_handlers(monkeypatch):
 
 
 def test_sync_add_handler(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     called = {}
     def capture(*a, **kw):
         called["json"] = kw.get("json")
@@ -328,7 +328,7 @@ def test_sync_add_handler(monkeypatch):
 
 
 def test_sync_add_handler_llm(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     called = {}
     def capture(*a, **kw):
         called["json"] = kw.get("json")
@@ -349,7 +349,7 @@ def test_sync_add_handler_llm(monkeypatch):
 
 
 def test_sync_remove_handler(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse(json_data={"status": "removed", "name": "test"})
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     result = client.remove_handler("test")
@@ -357,7 +357,7 @@ def test_sync_remove_handler(monkeypatch):
 
 
 def test_sync_update_handler(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     resp = MockResponse(json_data={"status": "updated", "name": "test"})
     monkeypatch.setattr(client._http, "request", lambda *a, **kw: resp)
     result = client.update_handler("test", enabled=False)
@@ -365,7 +365,7 @@ def test_sync_update_handler(monkeypatch):
 
 
 def test_sync_stop_handler(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     called = {}
     def capture(*a, **kw):
         called["json"] = kw.get("json")
@@ -378,7 +378,7 @@ def test_sync_stop_handler(monkeypatch):
 
 
 def test_sync_stop_handler_with_pid(monkeypatch):
-    client = toq.connect("http://localhost:9010")
+    client = toq.connect("http://localhost:9009")
     called = {}
     def capture(*a, **kw):
         called["json"] = kw.get("json")

@@ -9,7 +9,7 @@ from urllib.parse import quote
 import httpx
 import httpx_sse
 
-DEFAULT_URL = "http://127.0.0.1:9010"
+DEFAULT_URL = "http://127.0.0.1:9009"
 URL_ENV = "TOQ_API_URL"
 DAEMON_NOT_RUNNING = "toq daemon is not running. Run 'toq up' first."
 
@@ -25,7 +25,7 @@ def _resolve_url(url: Optional[str] = None) -> str:
     1. Explicit url parameter
     2. TOQ_API_URL environment variable
     3. .toq/state.json in current directory (workspace mode)
-    4. Default http://127.0.0.1:9010
+    4. Default http://127.0.0.1:9009
     """
     if url:
         return url
@@ -37,7 +37,7 @@ def _resolve_url(url: Optional[str] = None) -> str:
         try:
             with open(state_path) as f:
                 state = json.load(f)
-            port = state.get("api_port")
+            port = state.get("port")
             if port:
                 return f"http://127.0.0.1:{port}"
         except (json.JSONDecodeError, OSError):
