@@ -22,19 +22,19 @@ def test_connect_custom_url():
 
 
 def test_connect_env_var(monkeypatch):
-    monkeypatch.setenv("TOQ_API_URL", "http://custom:1234")
+    monkeypatch.setenv("TOQ_URL", "http://custom:1234")
     client = toq.connect()
     assert client._url == "http://custom:1234"
 
 
 def test_connect_explicit_overrides_env(monkeypatch):
-    monkeypatch.setenv("TOQ_API_URL", "http://from-env:1234")
+    monkeypatch.setenv("TOQ_URL", "http://from-env:1234")
     client = toq.connect("http://explicit:5678")
     assert client._url == "http://explicit:5678"
 
 
 def test_connect_workspace_state(monkeypatch, tmp_path):
-    monkeypatch.delenv("TOQ_API_URL", raising=False)
+    monkeypatch.delenv("TOQ_URL", raising=False)
     monkeypatch.chdir(tmp_path)
     toq_dir = tmp_path / ".toq"
     toq_dir.mkdir()
@@ -44,7 +44,7 @@ def test_connect_workspace_state(monkeypatch, tmp_path):
 
 
 def test_connect_env_overrides_workspace(monkeypatch, tmp_path):
-    monkeypatch.setenv("TOQ_API_URL", "http://from-env:1234")
+    monkeypatch.setenv("TOQ_URL", "http://from-env:1234")
     monkeypatch.chdir(tmp_path)
     toq_dir = tmp_path / ".toq"
     toq_dir.mkdir()

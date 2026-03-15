@@ -10,7 +10,7 @@ import httpx
 import httpx_sse
 
 DEFAULT_URL = "http://127.0.0.1:9009"
-URL_ENV = "TOQ_API_URL"
+URL_ENV = "TOQ_URL"
 DAEMON_NOT_RUNNING = "toq daemon is not running. Run 'toq up' first."
 
 
@@ -23,7 +23,7 @@ def _resolve_url(url: Optional[str] = None) -> str:
 
     Resolution order:
     1. Explicit url parameter
-    2. TOQ_API_URL environment variable
+    2. TOQ_URL environment variable
     3. .toq/state.json in current directory (workspace mode)
     4. Default http://127.0.0.1:9009
     """
