@@ -327,6 +327,27 @@ def test_sync_add_handler(monkeypatch):
     assert called["json"]["filter_from"] == ["toq://host/*"]
 
 
+def test_sync_add_handler_llm(monkeypatch):
+    client = toq.connect("http://localhost:9010")
+    called = {}
+    def capture(*a, **kw):
+        called["json"] = kw.get("json")
+        return MockResponse(json_data={"status": "added", "name": "chat"})
+    monkeypatch.setattr(client._http, "request", capture)
+    result = client.add_handler(
+        "chat", provider="openai", model="gpt-4o",
+        prompt="You are helpful", max_turns=5, auto_close=True,
+    )
+    assert result["status"] == "added"
+    assert called["json"]["name"] == "chat"
+    assert called["json"]["provider"] == "openai"
+    assert called["json"]["model"] == "gpt-4o"
+    assert called["json"]["prompt"] == "You are helpful"
+    assert called["json"]["max_turns"] == 5
+    assert called["json"]["auto_close"] is True
+    assert "command" not in called["json"]
+
+
 def test_sync_remove_handler(monkeypatch):
     client = toq.connect("http://localhost:9010")
     resp = MockResponse(json_data={"status": "removed", "name": "test"})

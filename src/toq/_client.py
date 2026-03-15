@@ -283,13 +283,33 @@ class Client:
     def add_handler(
         self,
         name: str,
-        command: str,
+        command: str = "",
         *,
+        provider: str = "",
+        model: str = "",
+        prompt: Optional[str] = None,
+        prompt_file: Optional[str] = None,
+        max_turns: Optional[int] = None,
+        auto_close: bool = False,
         filter_from: Optional[List[str]] = None,
         filter_key: Optional[List[str]] = None,
         filter_type: Optional[List[str]] = None,
     ) -> dict:
-        body: dict = {"name": name, "command": command}
+        body: dict = {"name": name}
+        if command:
+            body["command"] = command
+        if provider:
+            body["provider"] = provider
+        if model:
+            body["model"] = model
+        if prompt is not None:
+            body["prompt"] = prompt
+        if prompt_file is not None:
+            body["prompt_file"] = prompt_file
+        if max_turns is not None:
+            body["max_turns"] = max_turns
+        if auto_close:
+            body["auto_close"] = True
         if filter_from:
             body["filter_from"] = filter_from
         if filter_key:
@@ -598,13 +618,33 @@ class AsyncClient:
     async def add_handler(
         self,
         name: str,
-        command: str,
+        command: str = "",
         *,
+        provider: str = "",
+        model: str = "",
+        prompt: Optional[str] = None,
+        prompt_file: Optional[str] = None,
+        max_turns: Optional[int] = None,
+        auto_close: bool = False,
         filter_from: Optional[List[str]] = None,
         filter_key: Optional[List[str]] = None,
         filter_type: Optional[List[str]] = None,
     ) -> dict:
-        body: dict = {"name": name, "command": command}
+        body: dict = {"name": name}
+        if command:
+            body["command"] = command
+        if provider:
+            body["provider"] = provider
+        if model:
+            body["model"] = model
+        if prompt is not None:
+            body["prompt"] = prompt
+        if prompt_file is not None:
+            body["prompt_file"] = prompt_file
+        if max_turns is not None:
+            body["max_turns"] = max_turns
+        if auto_close:
+            body["auto_close"] = True
         if filter_from:
             body["filter_from"] = filter_from
         if filter_key:
