@@ -25,23 +25,27 @@ def _resolve_url(url: Optional[str] = None) -> str:
     1. Explicit url parameter
     2. TOQ_URL environment variable
     3. .toq/state.json in current directory (workspace mode)
-    4. Default http://127.0.0.1:9009
+    4. ~/.toq/state.json (default workspace)
+    5. Default http://127.0.0.1:9009
     """
     if url:
         return url
     env = os.environ.get(URL_ENV)
     if env:
         return env
-    state_path = os.path.join(".toq", "state.json")
-    if os.path.exists(state_path):
-        try:
-            with open(state_path) as f:
-                state = json.load(f)
-            port = state.get("port")
-            if port:
-                return f"http://127.0.0.1:{port}"
-        except (json.JSONDecodeError, OSError):
-            pass
+    for state_path in [
+        os.path.join(".toq", "state.json"),
+        os.path.join(os.path.expanduser("~"), ".toq", "state.json"),
+    ]:
+        if os.path.exists(state_path):
+            try:
+                with open(state_path) as f:
+                    state = json.load(f)
+                port = state.get("port")
+                if port:
+                    return f"http://127.0.0.1:{port}"
+            except (json.JSONDecodeError, OSError):
+                pass
     return DEFAULT_URL
 
 
